@@ -45,20 +45,20 @@
     - name: Start Docker on startup
       shell: systemctl enable docker
       become: yes
-    - name: Set rights to Docker
+    - name: Set rights to docker
       shell: usermod -a -G docker ec2-user
       become: yes
     - name: Get eshop from GIT
       git:
         repo: 'https://github.com/MartinZboril/4IT572_ansible.git'
         dest: ./app
-    - name: Build Docker with eshop
+    - name: Build docker with eshop
       shell: cd app && docker build -t myeshop:latest .
       become: yes
     - name: Run Docker with eshop
       shell: docker run -p 80:3000 myeshop
       async: 45
-      pull: 0
+      poll: 0
       become: yes
     - wait_for:
         port:
