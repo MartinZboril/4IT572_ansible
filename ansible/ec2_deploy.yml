@@ -3,7 +3,7 @@
   connection: local
 
   tasks:
-    - name: Launch EC2 Instance
+    - name: Launch EC2 instance
       ec2_instance:
         instance_type: t2.micro
         image_id: ami-0230bd60aa48260c6
@@ -19,11 +19,13 @@
         aws_secret_key: "{{ secret_key }}"
         security_token: "{{ session_token }}"
       register: ec2_instance_result
+
     - name: Add instance host to group
       add_host:
         hostname: "{{ item.public_ip_address }}"
         groupname: launched
       loop: "{{ ec2_instance_result.instances }}"
+
     - name: Wait for SSH connection
       delegate_to: "{{ item.public_dns_name }}"
       wait_for_connection:
@@ -39,8 +41,8 @@
     - name: Install Git and Docker
       yum:
         name:
-          - git
           - docker
+          - git
         state: latest
         update_cache: yes
       become: yes
@@ -55,19 +57,24 @@
     - name: Set rights to docker
       shell: usermod -a -G docker ec2-user
       become: yes
-    - name: Get eshop from GIT
+    - name: Get project files from git
       git:
         repo: 'https://github.com/MartinZboril/4IT572_ansible.git'
         dest: ./app
-    - name: Build docker with eshop
-      shell: cd app && docker build -t myeshop:latest .
-      become: yes
+    - name: Build an image and push it to a private repo
+      docker_image:
+        build:
+          path: .
+          dockerfile: apps/Dockerfile
+        name: myeshop
+        tag: latest
+        source: build
+        become: yes
     - name: Run Docker with eshop
-      shell: docker run -p 80:3000 myeshop
+      shell: docker container run -p 80:3000 myeshop
       async: 45
       poll: 0
       become: yes
     - wait_for:
         port:
           80
-
